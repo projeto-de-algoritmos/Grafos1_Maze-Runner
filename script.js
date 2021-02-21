@@ -10,6 +10,9 @@ let Node = function(type){
 	this.type = type;
 	this.x = null;
 	this.y = null;
+	this.distance = null;
+	this.next = null;
+	this.search = "O";
 };
 
 let Maze = function(){
@@ -21,18 +24,24 @@ let Maze = function(){
 Node.prototype.getType = function() {
     switch(this.type){
         case "wall":
-            return "#010a5e";
+            return "#262254";
         case "path":
             return "#fff";
         case "start":
             return "#3ad900";
         case "end":
-            return "red";
+            return "#ffa45e";
         case "walk":
-            return "yellow";
+            return "#ec4176";
         default:
             return "#f400fc"
 	}
+};
+
+Node.prototype.getNeighbors = function(){
+	x = this.x;
+	y = this.y;
+	return [[y-1,x-1], [y-1,x], [y-1,x+1], [y,x-1], [y,x+1], [y+1,x-1], [y+1,x], [y+1,x+1]];
 };
 
 Maze.prototype.initGraph = function(size){
@@ -163,13 +172,46 @@ Maze.prototype.paint = function(){
 	for (let y=0; y<numys; y++){
 		for (let x=0; x<numxs; x++){
 			let node = this.graph[y][x];
-			context.fillStyle = node.getType()
+			context.fillStyle = node.getType();
 			let rectX = x * nodeLength;
 			let rectY = y * nodeLength;
 			context.fillRect(rectX, rectY, nodeLength, nodeLength);
 		}
 	}
 };
+
+Maze.prototype.shortestBfs = function(){
+	let start = this.end;
+	start.distance = 0;
+	start.next = null;
+	let cellQueue = [];
+	cellQueue.push(start);
+	while (cellQueue.length > 0){
+		let currentCell = cellQueue.shift();
+		let neighbors = currentCell.getNeighbors();
+		for (let neighbor of neighbors){
+			let row = neighbor[0];
+			let col = neighbor[1];
+			if (row >= 0 && col >= 0 && row < this.graph.length && col < this.graph[0].length){
+				let cell = this.graph[row][col];
+				if (cell.search == "O" && cell.type != "wall"){
+					cell.search = "-";
+					cell.distance = currentCell.distance + 1;
+					cell.next = currentCell;
+					cellQueue.push(cell);
+				}
+			}
+		}
+		currentCell.search = "X";
+	}
+};
+
+Maze.prototype.bfsMark = function(currentCell){
+	currentCell.type = "walk";
+	this.paint();
+};
+
+maze = null;
 
 function initMaze(){
 	maze = new Maze();
@@ -183,3 +225,16 @@ function initMaze(){
 initMaze();
 
 document.getElementById("create").addEventListener("click", initMaze);
+
+document.getElementById("solve").addEventListener("click", () => {
+	maze.shortestBfs();
+	currentCell = maze.start.next;
+	function travel() {
+		if (currentCell != maze.end){
+			maze.bfsMark(currentCell);
+			currentCell = currentCell.next;
+			requestAnimationFrame(travel);
+		}
+	}
+	requestAnimationFrame(travel);
+});
