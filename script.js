@@ -211,6 +211,16 @@ Maze.prototype.bfsMark = function(currentCell){
 	this.paint();
 };
 
+Maze.prototype.bfsClear = function() {
+	for (let y of this.graph){
+		for (let node of y){
+			if (node.type == "walk"){
+				node.type = "path";
+			}
+		}
+	}
+};
+
 maze = null;
 
 function initMaze(){
@@ -237,4 +247,9 @@ document.getElementById("solve").addEventListener("click", () => {
 		}
 	}
 	requestAnimationFrame(travel);
+});
+
+document.getElementById("clear").addEventListener("click", () => {
+	maze.bfsClear();
+	maze.paint();
 });
